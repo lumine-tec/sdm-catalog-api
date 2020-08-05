@@ -125,7 +125,7 @@ module.exports = (app) => {
         const sid = headers['authorization'];
 
         // TODO: Session verification        
-        const where = (query.where) ? `(${query.where}) AND deleted = 0` : "";
+        const where = (query.where) ? `(${query.where}) AND deleted = 0` : "deleted = 0";
         const order_by = (query.order_by) ? query.order_by : "";
         const limit = (query.limit) ? query.limit : "";
 
@@ -295,6 +295,58 @@ module.exports = (app) => {
         resp.data = body;
         res.send(resp);
 
+    });
+
+    // [DELETE] => /offering/:id
+    app.delete(`/offering/:id`, async (req, res) => {
+        const { params, headers, body } = req;
+        const resp = {
+            status: 0,
+            msg: "",
+            errors: []
+        };
+
+        if (!headers['authorization'] || !Number(headers['authorization'])) {
+            resp.errors.push({
+                location: "header",
+                param: "Authorization",
+                msg: "A Session ID precisa ser informada!"
+            });
+            return res.status(403).send(resp);
+        }
+
+        const sid = headers['authorization'];
+
+        // TODO: Session verification        
+        const where = `id = '${params.id}' AND deleted = 0`;
+
+        const offering = await Offering.GetFirst(where);
+
+        if (!offering) {
+            resp.errors.push({
+                msg: "Oferta não encontrada"
+            });
+            return res.status(404).send(resp);
+        }
+
+        const fields = await OfferingField.Get(`offering = '${params.id}'`);
+        const fieldIds = fields.map(x => x.id);
+        
+        const deleteOffering = await Offering.Delete(`id = '${params.id}'`);
+
+        if(deleteOffering.status !== 1){
+            resp.errors.push({
+                msg: 'Erro ao excluir oferta'
+            });
+            return res.status(500).send(resp);
+        }
+
+        await OfferingField.Delete(`offering = '${params.id}'`);
+        await OfferingFieldOption.Delete(`field in ('${fieldIds.join(`', '`)}')`);
+
+        resp.status = 1;
+        resp.msg = "Oferta excluida com sucesso!";
+        res.send(resp);
     });
 
 };

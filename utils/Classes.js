@@ -60,7 +60,7 @@ class Classes
         const db = new DB(this.table);
 
         if(this.fields.includes("deleted")){
-            db.excluido = 1;
+            db.deleted = 1;
             db.Where(where);
     
             const result = await db.Update();
