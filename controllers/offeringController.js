@@ -85,7 +85,7 @@ module.exports = (app) => {
         res.send(resp);
     });
 
-    // [GET] =>/offering
+    // [GET] => /offering
     app.get(`/offering`, async (req, res) => {
         const { headers, query } = req;
         const resp = {
@@ -115,6 +115,46 @@ module.exports = (app) => {
         
         resp.data = offerings;
         resp.status = 1;
+        res.send(resp);
+    });
+
+    // [GET] => /offering/:id
+    app.get(`/offering/:id`, async (req, res) => {
+        const { params, headers } = req;
+        const resp = {
+            status: 0,
+            msg: "",
+            data: null,
+            errors: []
+        };
+
+        if(!headers['authorization'] || !Number(headers['authorization'])){
+            resp.errors.push({
+                location: "header",
+                param: "Authorization",
+                msg: "A Session ID precisa ser informada!"
+            });
+            return res.status(403).send(resp);
+        }
+
+        const sid = headers['authorization'];
+
+        // TODO: Session verification        
+        const where = `id = '${params.id}' AND deleted = 0`;
+
+        const offering = await Offering.GetFirst(where);
+
+        if(!offering){
+            resp.errors.push({
+                msg: "Oferta não encontrada"
+            });
+            return res.status(404).send(resp);
+        }
+
+        
+
+        resp.status = 1;
+        resp.data = offering;
         res.send(resp);
     });
 
