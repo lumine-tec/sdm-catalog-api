@@ -71,12 +71,30 @@ module.exports = (app) => {
             return res.status(500).send(resp);
         }
 
-        data.fields.forEach(field => {
-            const createField = OfferingField.Create({
+        data.fields.forEach(async field => {
+            const fieldObj = {
                 id: Util.generateId(),
                 offering: data.id,
                 ...field
-            });
+            };
+            
+            const createField = await OfferingField.Create(fieldObj);
+
+            if(createField.status == 1){
+                if(field.options && Array.isArray(field.options)){
+                    
+                    field.options.forEach(option => {
+                        OfferingFieldOption.Create({
+                            id: Util.generateId(),
+                            field: fieldObj.id,
+                            label: option.label,
+                            value: option.value
+                        });
+                    });
+
+                }
+            }
+
         });
 
         resp.status = 1;
